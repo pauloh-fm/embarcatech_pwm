@@ -1,4 +1,4 @@
-# Tarefa 1 -Comunicação Serial com RP2040
+# Tarefa 06/02 -PWM
 
 **Autor:** Paulo Henrique de Farias Martins
 
@@ -8,7 +8,7 @@
 
 ## Instruções
 
-Siga estes 4 passos simples para executar o projeto:
+Siga estes 3 passos simples para executar o projeto:
 
 1. **Clonar o projeto:**  
    Clone este repositório para sua máquina local.
@@ -20,9 +20,5 @@ Siga estes 4 passos simples para executar o projeto:
    Execute o projeto utilizando a extensão *Raspberry Pico Pi*.
 
 ## Demonstração de funcionamento
-https://youtu.be/tn05Use0oyk
-
-Assista à demonstração no YouTube:  
-https://youtu.be/tn05Use0oyk
 
 
