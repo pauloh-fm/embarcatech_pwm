@@ -3,84 +3,110 @@
 #include "hardware/pwm.h"
 
 // Definições dos pinos
-#define PWM_SERVO 22   // Pino do Servo
-#define PWM_LED 12     // Pino do LED RGB
-#define PWM_FREQ 50    // Frequência do PWM = 50Hz (20ms de período)
+#define PWM_SERVO 22  // GPIO do Servo Motor
+#define PWM_LED 12    // GPIO do LED RGB
 
-// Definições do PWM
-const uint16_t WRAP_VALUE = 40000;  // 20ms período total (50Hz)
-const float PWM_DIVIDER = 40.0;     // Divisor do clock do PWM
+// Definição do modo de operação (1 = Servo, 2 = LED)
+#define modo_operacao 1  // TODO:Altere para 2 para testar com LED
 
-// Variável de controle
-int modo_operacao = 1;  // 1 = Servo, 2 = LED
+const uint16_t WRAP_PERIOD = 40000; // Valor máximo do contador PWM para 50Hz
+const float PWM_DIVISER = 64.0;      // Divisor do clock para PWM
 
-// Função para configurar o PWM na GPIO especificada
-void pwm_setup(uint pin) {
-    gpio_set_function(pin, GPIO_FUNC_PWM);  // Configura a GPIO como PWM
-    uint slice = pwm_gpio_to_slice_num(pin); // Obtém o slice PWM do pino
+// Ciclos ativos em microssegundos para posições do servo
+const uint16_t ANGLE_0 = 500;    // =~0 graus
+const uint16_t ANGLE_90 = 1470;  // =~90 graus
+const uint16_t ANGLE_180 = 2400; // =~ 180 graus
+const uint16_t INCREMENTO = 5;   // Incremento de 5µs para suavidade
 
-    pwm_set_clkdiv(slice, PWM_DIVIDER);  // Configura o divisor do clock
-    pwm_set_wrap(slice, WRAP_VALUE);     // Define o período PWM (20ms)
-    pwm_set_gpio_level(pin, 500);        // Define duty cycle inicial
-    pwm_set_enabled(slice, true);        // Ativa o PWM
+// Função para configurar o módulo PWM
+void pwm_setup(uint gpio) {
+    gpio_set_function(gpio, GPIO_FUNC_PWM); // Configura GPIO como PWM
+    uint slice = pwm_gpio_to_slice_num(gpio); // Obtém o canal PWM
+
+    pwm_set_clkdiv(slice, PWM_DIVISER); // Define o divisor de clock do PWM
+    pwm_set_wrap(slice, WRAP_PERIOD); // Define o valor de wrap para 50Hz
+    pwm_set_gpio_level(gpio, 0); // Inicializa PWM com ciclo de trabalho 0
+    pwm_set_enabled(slice, true); // Habilita PWM no slice correspondente
 }
 
-// Função para ajustar o duty cycle
-void set_pwm_duty(uint pin, uint16_t duty) {
-    pwm_set_gpio_level(pin, duty);
-    printf("Modo: %s | Ciclo ativo: %d us\n", (modo_operacao == 1) ? "Servo" : "LED", duty);
+// Define o ciclo de trabalho do servo em microssegundos
+void set_servo_position(uint gpio, uint16_t ANGLE_width_us) {
+    uint slice = pwm_gpio_to_slice_num(gpio);
+    uint16_t duty_cycle = (ANGLE_width_us * WRAP_PERIOD) / 20000; // Converte para ciclo PWM
+    pwm_set_gpio_level(gpio, duty_cycle);
+}
+
+// Define o brilho do LED RGB baseado na posição do servo
+void set_led_brightness(uint gpio, uint16_t ANGLE_width_us) {
+    uint16_t brightness = (ANGLE_width_us * WRAP_PERIOD) / 2400; // Ajusta brilho proporcionalmente
+    pwm_set_gpio_level(gpio, brightness);
 }
 
 int main() {
     stdio_init_all();
-
-    // Configura o PWM conforme o modo de operação
+    
     if (modo_operacao == 1) {
-        pwm_setup(PWM_SERVO);
-    } else {
-        pwm_setup(PWM_LED);
+        pwm_setup(PWM_SERVO); // Configura PWM para servo
+    } else if (modo_operacao == 2) {
+        pwm_setup(PWM_LED); // Configura PWM para LED
     }
 
     while (true) {
         if (modo_operacao == 1) {
-            // Controle do Servo Motor
-            set_pwm_duty(PWM_SERVO, 2400);  // Posição 180°
+            // **Controle do Servo**
+            set_servo_position(PWM_SERVO, ANGLE_180);
             sleep_ms(5000);
 
-            set_pwm_duty(PWM_SERVO, 1470);  // Posição 90°
+            set_servo_position(PWM_SERVO, ANGLE_90);
             sleep_ms(5000);
 
-            set_pwm_duty(PWM_SERVO, 500);   // Posição 0°
+            set_servo_position(PWM_SERVO, ANGLE_0);
             sleep_ms(5000);
 
-            // Movimento  periódico
-            for (uint16_t i = 500; i <= 2400; i += 5) {
-                set_pwm_duty(PWM_SERVO, i);
-                sleep_ms(10);
+            // Movimento contínuo entre 0 e 180 graus
+            while (true) {
+                for (uint16_t ANGLE = ANGLE_0; ANGLE <= ANGLE_180; ANGLE += INCREMENTO) {
+                    set_servo_position(PWM_SERVO, ANGLE);
+                    sleep_ms(10);
+                }
+
+                sleep_ms(1000); // Espera 1s em 180 graus
+
+                for (uint16_t ANGLE = ANGLE_180; ANGLE >= ANGLE_0; ANGLE -= INCREMENTO) {
+                    set_servo_position(PWM_SERVO, ANGLE);
+                    sleep_ms(10);
+                }
+
+                sleep_ms(1000); // Espera 1s em 0 graus
             }
-            for (uint16_t i = 2400; i >= 500; i -= 5) {
-                set_pwm_duty(PWM_SERVO, i);
-                sleep_ms(10);
-            }
-        } else {
-            // Controle do LED RGB
-            set_pwm_duty(PWM_LED, 2400);  // LED mais brilhante
+        } 
+        
+        else if (modo_operacao == 2) {
+            // **Controle do LED RGB**
+            set_led_brightness(PWM_LED, ANGLE_180);
             sleep_ms(5000);
 
-            set_pwm_duty(PWM_LED, 1470);  // LED brilho médio
+            set_led_brightness(PWM_LED, ANGLE_90);
             sleep_ms(5000);
 
-            set_pwm_duty(PWM_LED, 500);   // LED mais fraco
+            set_led_brightness(PWM_LED, ANGLE_0);
             sleep_ms(5000);
 
-            // Movimento  periódico de brilho
-            for (uint16_t i = 500; i <= 2400; i += 5) {
-                set_pwm_duty(PWM_LED, i);
-                sleep_ms(10);
-            }
-            for (uint16_t i = 2400; i >= 500; i -= 5) {
-                set_pwm_duty(PWM_LED, i);
-                sleep_ms(10);
+            // Simulação do movimento do servo ajustando brilho do LED
+            while (true) {
+                for (uint16_t ANGLE = ANGLE_0; ANGLE <= ANGLE_180; ANGLE += INCREMENTO) {
+                    set_led_brightness(PWM_LED, ANGLE);
+                    sleep_ms(10);
+                }
+
+                sleep_ms(1000); // Espera 1s no máximo brilho
+
+                for (uint16_t ANGLE = ANGLE_180; ANGLE >= ANGLE_0; ANGLE -= INCREMENTO) {
+                    set_led_brightness(PWM_LED, ANGLE);
+                    sleep_ms(10);
+                }
+
+                sleep_ms(1000); // Espera 1s no mínimo brilho
             }
         }
     }
