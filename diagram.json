@@ -24,7 +24,7 @@
       "id": "led1",
       "top": -51.6,
       "left": -236.2,
-      "attrs": { "color": "red" }
+      "attrs": { "color": "blue" }
     }
   ],
   "connections": [
