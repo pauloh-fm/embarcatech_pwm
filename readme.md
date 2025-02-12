@@ -22,5 +22,10 @@ Siga estes 3 passos simples para executar o projeto:
    Execute o projeto utilizando a extensão *Wokwi*.
 
 ## Demonstração de funcionamento
-
+**video** 
 https://youtu.be/g9fiJ28QUQg
+
+**Simulador**
+
+https://wokwi.com/projects/422634808718618625
+
