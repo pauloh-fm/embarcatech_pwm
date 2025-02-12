@@ -23,9 +23,8 @@ Siga estes 3 passos simples para executar o projeto:
 
 ## Demonstração de funcionamento
 **video** 
-https://youtu.be/g9fiJ28QUQg
+   https://youtu.be/g9fiJ28QUQg
 
 **Simulador**
-
-https://wokwi.com/projects/422634808718618625
+   https://wokwi.com/projects/422634808718618625
 
